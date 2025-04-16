@@ -1,0 +1,14 @@
+<h2>Chào mừng bạn!</h2>
+<form method="POST" action="/upload" enctype="multipart/form-data">
+  <input type="file" name="file" required />
+  <button>Tải lên</button>
+</form>
+
+<h3>File đã tải lên</h3>
+<ul>
+  <% files.forEach(f => { %>
+    <li><%= f.name %> - <a href="/download/<%= f.path %>">Tải xuống</a></li>
+  <% }) %>
+</ul>
+
+<a href="/logout">Đăng xuất</a>

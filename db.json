@@ -1,0 +1,34 @@
+{
+  "users": [
+    {
+      "id": "M_l5X9pXlWcv6hIEroKK2",
+      "username": "khoadu",
+      "password": "$2b$10$cW76lZlZ0/zfoW7KFGPdhOymqyF/oq3qGrmtLaTz//cS0LvfgKfQe"
+    },
+    {
+      "id": "e8UI_Ll4r1uxY2OAgbsOb",
+      "username": "khoabeu",
+      "password": "$2b$10$7O/y0y2ttVWDJSu5F54oVuJOdAW0vHTxiw87rkPsZNc6bMSShC1XC"
+    }
+  ],
+  "files": [
+    {
+      "id": "LskAQC9YiMUNwJujgryt7",
+      "name": "demo.txt",
+      "path": "1744704999135_demo.txt",
+      "owner": "M_l5X9pXlWcv6hIEroKK2"
+    },
+    {
+      "id": "FETcBVRi4YBNZOClGqHyF",
+      "name": "demo.txt",
+      "path": "1744705137160_demo.txt",
+      "owner": "e8UI_Ll4r1uxY2OAgbsOb"
+    },
+    {
+      "id": "MI3Kye62AQgRZOITqvkXI",
+      "name": "BCDA_ATTT_16.docx",
+      "path": "1744705166711_BCDA_ATTT_16.docx",
+      "owner": "M_l5X9pXlWcv6hIEroKK2"
+    }
+  ]
+}

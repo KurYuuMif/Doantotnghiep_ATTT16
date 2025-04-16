@@ -14,7 +14,6 @@
     },
     
     "scripts": {
-        "start": "node server.js",
-        "postinstall": "rm -rf node_modules && npm install --force"
+        "start": "node server.js"
     }
 }

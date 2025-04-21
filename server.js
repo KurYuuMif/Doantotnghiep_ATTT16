@@ -217,12 +217,71 @@ app.post("/settings/verify-otp", requireLogin, async (req, res) => {
     user.otpEnabled = true;
     user.pendingOtp = null;
     await db.write();
-    return res.render("verify-success");
+    return res.render("verify-success"); // chuyển hướng đúng như bạn yêu cầu
   }
 
-  res.send("Mã OTP không chính xác.");
+  // Nếu OTP sai → tạo mới và gửi lại
+  const newOtp = otpGenerator.generate(6, { digits: true, upperCaseAlphabets: false, specialChars: false });
+  user.pendingOtp = newOtp;
+  await db.write();
+
+  // Gửi lại OTP
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
+    }
+  });
+
+  const mailOptions = {
+    from: `"Hệ thống xác thực OTP" <${process.env.EMAIL_USER}>`,
+    to: user.email,
+    subject: "Mã OTP mới do xác minh sai",
+    text: `Bạn đã nhập sai mã OTP. Mã OTP mới là: ${newOtp}`
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    return res.send("❌ Mã OTP sai. Mã mới đã được gửi đến email.");
+  } catch (err) {
+    console.error("Lỗi gửi OTP mới:", err);
+    return res.status(500).send("Không thể gửi OTP mới. Vui lòng thử lại.");
+  }
 });
 
+app.post("/settings/resend-otp", requireLogin, async (req, res) => {
+  const user = db.data.users.find(u => u.id === req.session.userId);
+  if (!user || !user.email) return res.status(400).send("Email chưa được thiết lập.");
+
+  const otp = otpGenerator.generate(6, { digits: true, upperCaseAlphabets: false, specialChars: false });
+  user.pendingOtp = otp;
+  await db.write();
+
+  // Cấu hình gửi mail
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL_USER, // hoặc thay bằng email trực tiếp
+      pass: process.env.EMAIL_PASS
+    }
+  });
+
+  const mailOptions = {
+    from: `"Hệ thống xác thực OTP" <${process.env.EMAIL_USER}>`,
+    to: user.email,
+    subject: "Mã OTP mới",
+    text: `Mã OTP mới của bạn là: ${otp}`
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    res.send("✅ Mã OTP mới đã được gửi đến email của bạn.");
+  } catch (err) {
+    console.error("Lỗi gửi OTP mới:", err);
+    res.status(500).send("Không thể gửi OTP mới. Vui lòng thử lại.");
+  }
+});
 
 // Start server
 const port = process.env.PORT || 3000;

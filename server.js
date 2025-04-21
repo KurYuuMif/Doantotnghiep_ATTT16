@@ -14,8 +14,6 @@ import otpGenerator from "otp-generator";
 import speakeasy from "speakeasy"; 
 import QRCode from "qrcode";       
 
-import nodemailer from "nodemailer";
-
 // Thiết lập __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

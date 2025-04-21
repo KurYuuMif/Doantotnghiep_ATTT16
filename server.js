@@ -168,6 +168,25 @@ app.post("/settings/disable-otp", requireLogin, async (req, res) => {
   res.redirect("/settings");
 });
 
+app.post("/delete/:id", requireLogin, async (req, res) => {
+  const fileIndex = db.data.files.findIndex(f => f.id === req.params.id && f.owner === req.session.userId);
+  if (fileIndex === -1) return res.send("Không tìm thấy file để xóa");
+
+  const file = db.data.files[fileIndex];
+  const filePath = path.join(__dirname, "public/uploads", file.path);
+
+  // Xóa file khỏi ổ đĩa
+  if (fs.existsSync(filePath)) {
+    fs.unlinkSync(filePath);
+  }
+
+  // Xóa file khỏi database
+  db.data.files.splice(fileIndex, 1);
+  await db.write();
+
+  res.redirect("/dashboard");
+});
+
 // Start server
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log("Running on", port));

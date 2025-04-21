@@ -13,7 +13,7 @@ import nodemailer from "nodemailer";
 import otpGenerator from "otp-generator";
 import speakeasy from "speakeasy"; 
 import QRCode from "qrcode";       
-import otpGenerator from "otp-generator";
+
 import nodemailer from "nodemailer";
 
 // Thiết lập __dirname

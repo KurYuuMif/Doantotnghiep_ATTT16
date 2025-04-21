@@ -89,18 +89,41 @@ app.post("/login", async (req, res) => {
   }
 
   if (user.otpEnabled) {
-    // nếu chưa nhập OTP thì render form yêu cầu
     if (!token) {
-      return res.render("otp", { username }); // tạo form nhập OTP
+      // Tạo OTP ngẫu nhiên và lưu tạm
+      const generatedOtp = otpGenerator.generate(6, { digits: true });
+      user.otpTemp = generatedOtp;
+      user.otpExpires = Date.now() + 5 * 60 * 1000; // hết hạn sau 5 phút
+      await db.write();
+  
+      // Gửi OTP qua email
+      const transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+          user: "your-email@gmail.com",       // 🔁 THAY THẾ email của bạn
+          pass: "your-app-password"           // 🔁 MẬT KHẨU ứng dụng Gmail
+        }
+      });
+  
+      await transporter.sendMail({
+        from: '"DoAnTotNghiep" <your-email@gmail.com>',
+        to: user.email,
+        subject: "Mã xác thực OTP",
+        text: `Mã OTP của bạn là: ${generatedOtp}`
+      });
+  
+      return res.render("otp", { username });
     }
-
-    const verified = speakeasy.totp.verify({
-      secret: user.otpSecret,
-      encoding: "base32",
-      token
-    });
-
-    if (!verified) return res.send("Mã OTP không đúng");
+  
+    // Kiểm tra OTP người dùng nhập
+    if (token !== user.otpTemp || Date.now() > user.otpExpires) {
+      return res.send("Mã OTP không đúng hoặc đã hết hạn");
+    }
+  
+    // Xóa OTP sau khi dùng
+    user.otpTemp = null;
+    user.otpExpires = null;
+    await db.write();
   }
 
   req.session.userId = user.id;
@@ -150,14 +173,12 @@ app.post("/settings/email", requireLogin, async (req, res) => {
 });
 
 app.post("/settings/enable-otp", requireLogin, async (req, res) => {
-  const secret = speakeasy.generateSecret({ name: "DoAnTotNghiepApp" });
   const user = db.data.users.find(u => u.id === req.session.userId);
-  user.otpSecret = secret.base32;
+  if (!user.email) return res.send("Bạn cần thêm email trước");
+
   user.otpEnabled = true;
   await db.write();
-
-  const qr = await QRCode.toDataURL(secret.otpauth_url);
-  res.render("verify-otp", { qr }); // người dùng quét để setup
+  res.redirect("/settings");
 });
 
 app.post("/settings/disable-otp", requireLogin, async (req, res) => {

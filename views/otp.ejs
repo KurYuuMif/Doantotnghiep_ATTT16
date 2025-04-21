@@ -1,10 +1,9 @@
-<h2>Xác thực OTP</h2>
-<nav>
+  <h3>Nhập mã OTP được gửi đến email của bạn</h3>
+  <nav>
     <a href="/">Trang chủ</a>
   </nav>
-<form action="/login" method="post">
-  <input type="hidden" name="username" value="<%= username %>">
-  <label>Mã OTP:</label>
-  <input name="token" required>
-  <button type="submit">Xác minh</button>
-</form>
+  <form method="POST" action="/login">
+    <input type="hidden" name="username" value="<%= username %>" />
+    <input type="text" name="token" placeholder="Nhập mã OTP" required />
+    <button>Gửi</button>
+  </form>

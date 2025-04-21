@@ -9,6 +9,11 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 
+import nodemailer from "nodemailer";
+import otpGenerator from "otp-generator";
+import speakeasy from "speakeasy"; 
+import QRCode from "qrcode";       
+
 // Thiết lập __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -61,7 +66,14 @@ app.get("/register", (req, res) => res.render("register"));
 app.post("/register", async (req, res) => {
   const { username, password } = req.body;
   const hash = await bcrypt.hash(password, 10);
-  db.data.users.push({ id: nanoid(), username, password: hash });
+  db.data.users.push({
+    id: nanoid(),
+    username,
+    password: hash,
+    email: null,
+    otpEnabled: false,
+    otpSecret: null
+  });
   await db.write();
   res.redirect("/login");
 });
@@ -69,14 +81,30 @@ app.post("/register", async (req, res) => {
 app.get("/login", (req, res) => res.render("login"));
 
 app.post("/login", async (req, res) => {
-  const { username, password } = req.body;
+  const { username, password, token } = req.body;
   const user = db.data.users.find(u => u.username === username);
-  if (user && await bcrypt.compare(password, user.password)) {
-    req.session.userId = user.id;
-    res.redirect("/dashboard");
-  } else {
-    res.send("Sai tên đăng nhập hoặc mật khẩu");
+  
+  if (!user || !(await bcrypt.compare(password, user.password))) {
+    return res.send("Sai tên đăng nhập hoặc mật khẩu");
   }
+
+  if (user.otpEnabled) {
+    // nếu chưa nhập OTP thì render form yêu cầu
+    if (!token) {
+      return res.render("otp", { username }); // tạo form nhập OTP
+    }
+
+    const verified = speakeasy.totp.verify({
+      secret: user.otpSecret,
+      encoding: "base32",
+      token
+    });
+
+    if (!verified) return res.send("Mã OTP không đúng");
+  }
+
+  req.session.userId = user.id;
+  res.redirect("/dashboard");
 });
 
 app.get("/dashboard", requireLogin, (req, res) => {
@@ -106,6 +134,38 @@ app.get("/download/:filename", requireLogin, (req, res) => {
 app.get("/logout", (req, res) => {
   req.session.destroy();
   res.redirect("/");
+});
+
+app.get("/settings", requireLogin, (req, res) => {
+  const user = db.data.users.find(u => u.id === req.session.userId);
+  res.render("settings", { user });
+});
+
+app.post("/settings/email", requireLogin, async (req, res) => {
+  const { email } = req.body;
+  const user = db.data.users.find(u => u.id === req.session.userId);
+  user.email = email;
+  await db.write();
+  res.redirect("/settings");
+});
+
+app.post("/settings/enable-otp", requireLogin, async (req, res) => {
+  const secret = speakeasy.generateSecret({ name: "DoAnTotNghiepApp" });
+  const user = db.data.users.find(u => u.id === req.session.userId);
+  user.otpSecret = secret.base32;
+  user.otpEnabled = true;
+  await db.write();
+
+  const qr = await QRCode.toDataURL(secret.otpauth_url);
+  res.render("verify-otp", { qr }); // người dùng quét để setup
+});
+
+app.post("/settings/disable-otp", requireLogin, async (req, res) => {
+  const user = db.data.users.find(u => u.id === req.session.userId);
+  user.otpEnabled = false;
+  user.otpSecret = null;
+  await db.write();
+  res.redirect("/settings");
 });
 
 // Start server

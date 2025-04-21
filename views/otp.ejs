@@ -1,0 +1,7 @@
+<h2>Xác thực OTP</h2>
+<form action="/login" method="post">
+  <input type="hidden" name="username" value="<%= username %>">
+  <label>Mã OTP:</label>
+  <input name="token" required>
+  <button type="submit">Xác minh</button>
+</form>

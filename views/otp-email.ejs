@@ -1,0 +1,7 @@
+<h2>Nhập mã OTP gửi qua email</h2>
+<form method="POST" action="/login">
+  <input type="hidden" name="username" value="<%= username %>"/>
+  <input type="password" name="password" placeholder="Mật khẩu" required />
+  <input type="text" name="token" placeholder="Mã OTP" required />
+  <button>Đăng nhập</button>
+</form>

@@ -13,6 +13,8 @@ import nodemailer from "nodemailer";
 import otpGenerator from "otp-generator";
 import speakeasy from "speakeasy"; 
 import QRCode from "qrcode";       
+import otpGenerator from "otp-generator";
+import nodemailer from "nodemailer";
 
 // Thiết lập __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -90,41 +92,16 @@ app.post("/login", async (req, res) => {
 
   if (user.otpEnabled) {
     if (!token) {
-      // Tạo OTP ngẫu nhiên và lưu tạm
-      const generatedOtp = otpGenerator.generate(6, { digits: true });
-      user.otpTemp = generatedOtp;
-      user.otpExpires = Date.now() + 5 * 60 * 1000; // hết hạn sau 5 phút
-      await db.write();
-  
-      // Gửi OTP qua email
-      const transporter = nodemailer.createTransport({
-        service: "gmail",
-        auth: {
-          user: "your-email@gmail.com",       // 🔁 THAY THẾ email của bạn
-          pass: "your-app-password"           // 🔁 MẬT KHẨU ứng dụng Gmail
-        }
-      });
-  
-      await transporter.sendMail({
-        from: '"DoAnTotNghiep" <your-email@gmail.com>',
-        to: user.email,
-        subject: "Mã xác thực OTP",
-        text: `Mã OTP của bạn là: ${generatedOtp}`
-      });
-  
-      return res.render("otp", { username });
+      return res.render("otp-email", { username }); // tạo file này
     }
   
-    // Kiểm tra OTP người dùng nhập
-    if (token !== user.otpTemp || Date.now() > user.otpExpires) {
-      return res.send("Mã OTP không đúng hoặc đã hết hạn");
+    if (token !== user.pendingOtp) {
+      return res.send("Mã OTP không đúng.");
     }
   
-    // Xóa OTP sau khi dùng
-    user.otpTemp = null;
-    user.otpExpires = null;
+    user.pendingOtp = null; // xóa OTP sau khi xác thực
     await db.write();
-  }
+  }  
 
   req.session.userId = user.id;
   res.redirect("/dashboard");
@@ -174,11 +151,37 @@ app.post("/settings/email", requireLogin, async (req, res) => {
 
 app.post("/settings/enable-otp", requireLogin, async (req, res) => {
   const user = db.data.users.find(u => u.id === req.session.userId);
-  if (!user.email) return res.send("Bạn cần thêm email trước");
 
-  user.otpEnabled = true;
+  if (!user.email) {
+    return res.send("Bạn cần thêm email trước khi bật OTP.");
+  }
+
+  // Tạo OTP ngẫu nhiên
+  const otp = otpGenerator.generate(6, { digits: true, upperCaseAlphabets: false, specialChars: false });
+
+  // Lưu tạm OTP để xác minh
+  user.pendingOtp = otp;
+
+  // Cấu hình mail (dùng dotenv để giấu thông tin)
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
+    }
+  });
+
+  await transporter.sendMail({
+    from: `"OTP System" <${process.env.EMAIL_USER}>`,
+    to: user.email,
+    subject: "Mã xác minh OTP",
+    text: `Mã OTP của bạn là: ${otp}`
+  });
+
   await db.write();
-  res.redirect("/settings");
+
+  // Hiện form để nhập mã OTP
+  res.render("verify-otp-code");
 });
 
 app.post("/settings/disable-otp", requireLogin, async (req, res) => {
@@ -207,6 +210,21 @@ app.post("/delete/:id", requireLogin, async (req, res) => {
 
   res.redirect("/dashboard");
 });
+
+app.post("/settings/verify-otp", requireLogin, async (req, res) => {
+  const { otp } = req.body;
+  const user = db.data.users.find(u => u.id === req.session.userId);
+
+  if (user.pendingOtp === otp) {
+    user.otpEnabled = true;
+    user.pendingOtp = null;
+    await db.write();
+    return res.send("Xác minh thành công. OTP đã bật!");
+  }
+
+  res.send("Mã OTP không chính xác.");
+});
+
 
 // Start server
 const port = process.env.PORT || 3000;

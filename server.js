@@ -39,6 +39,35 @@ app.use(session({
   saveUninitialized: false
 }));
 
+const sendOtpToUser = async (user, subject, message) => {
+  const otp = otpGenerator.generate(6, { digits: true, upperCaseAlphabets: false, specialChars: false });
+  user.pendingOtp = otp;
+  await db.write();
+
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
+    }
+  });
+
+  const mailOptions = {
+    from: `"Hệ thống xác thực OTP" <${process.env.EMAIL_USER}>`,
+    to: user.email,
+    subject,
+    text: `${message}\nMã OTP: ${otp}`
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    return { success: true, otp };
+  } catch (err) {
+    console.error("Lỗi gửi OTP:", err);
+    return { success: false, error: err };
+  }
+};
+
 // Cấu hình upload
 const storage = multer.diskStorage({
   destination: "./public/uploads/",
@@ -154,33 +183,14 @@ app.post("/settings/enable-otp", requireLogin, async (req, res) => {
     return res.send("Bạn cần thêm email trước khi bật OTP.");
   }
 
-  // Tạo OTP ngẫu nhiên
-  const otp = otpGenerator.generate(6, { digits: true, upperCaseAlphabets: false, specialChars: false });
-
-  // Lưu tạm OTP để xác minh
-  user.pendingOtp = otp;
-
-  // Cấu hình mail (dùng dotenv để giấu thông tin)
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    }
-  });
-
-  await transporter.sendMail({
-    from: `"OTP System" <${process.env.EMAIL_USER}>`,
-    to: user.email,
-    subject: "Mã xác minh OTP",
-    text: `Mã OTP của bạn là: ${otp}`
-  });
-
-  await db.write();
-
-  // Hiện form để nhập mã OTP
-  res.render("verify-otp-code");
+  const result = await sendOtpToUser(user, "Mã xác minh OTP", "Mã OTP của bạn là:");
+  if (result.success) {
+    res.render("verify-otp-code");
+  } else {
+    res.status(500).send("Không thể gửi OTP. Vui lòng thử lại.");
+  }
 });
+
 
 app.post("/settings/disable-otp", requireLogin, async (req, res) => {
   const user = db.data.users.find(u => u.id === req.session.userId);
@@ -217,35 +227,14 @@ app.post("/settings/verify-otp", requireLogin, async (req, res) => {
     user.otpEnabled = true;
     user.pendingOtp = null;
     await db.write();
-    return res.render("verify-success"); // chuyển hướng đúng như bạn yêu cầu
+    return res.render("verify-success");
   }
 
-  // Nếu OTP sai → tạo mới và gửi lại
-  const newOtp = otpGenerator.generate(6, { digits: true, upperCaseAlphabets: false, specialChars: false });
-  user.pendingOtp = newOtp;
-  await db.write();
-
-  // Gửi lại OTP
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    }
-  });
-
-  const mailOptions = {
-    from: `"Hệ thống xác thực OTP" <${process.env.EMAIL_USER}>`,
-    to: user.email,
-    subject: "Mã OTP mới do xác minh sai",
-    text: `Bạn đã nhập sai mã OTP. Mã OTP mới là: ${newOtp}`
-  };
-
-  try {
-    await transporter.sendMail(mailOptions);
+  // OTP sai → gửi lại OTP mới
+  const result = await sendOtpToUser(user, "Mã OTP mới do xác minh sai", "Bạn đã nhập sai mã OTP.");
+  if (result.success) {
     return res.send("❌ Mã OTP sai. Mã mới đã được gửi đến email.");
-  } catch (err) {
-    console.error("Lỗi gửi OTP mới:", err);
+  } else {
     return res.status(500).send("Không thể gửi OTP mới. Vui lòng thử lại.");
   }
 });
@@ -254,34 +243,14 @@ app.post("/settings/resend-otp", requireLogin, async (req, res) => {
   const user = db.data.users.find(u => u.id === req.session.userId);
   if (!user || !user.email) return res.status(400).send("Email chưa được thiết lập.");
 
-  const otp = otpGenerator.generate(6, { digits: true, upperCaseAlphabets: false, specialChars: false });
-  user.pendingOtp = otp;
-  await db.write();
-
-  // Cấu hình gửi mail
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.EMAIL_USER, // hoặc thay bằng email trực tiếp
-      pass: process.env.EMAIL_PASS
-    }
-  });
-
-  const mailOptions = {
-    from: `"Hệ thống xác thực OTP" <${process.env.EMAIL_USER}>`,
-    to: user.email,
-    subject: "Mã OTP mới",
-    text: `Mã OTP mới của bạn là: ${otp}`
-  };
-
-  try {
-    await transporter.sendMail(mailOptions);
+  const result = await sendOtpToUser(user, "Mã OTP mới", "Đây là mã OTP mới của bạn.");
+  if (result.success) {
     res.send("✅ Mã OTP mới đã được gửi đến email của bạn.");
-  } catch (err) {
-    console.error("Lỗi gửi OTP mới:", err);
+  } else {
     res.status(500).send("Không thể gửi OTP mới. Vui lòng thử lại.");
   }
 });
+
 
 // Start server
 const port = process.env.PORT || 3000;

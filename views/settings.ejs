@@ -9,11 +9,11 @@
 </form>
 
 <% if (!user.otpEnabled) { %>
-  <form action="/settings/enable-otp" method="post">
+  <form action="/settings/enable-otp" method="POST">
     <button type="submit">Bật OTP</button>
   </form>
 <% } else { %>
-  <form action="/settings/disable-otp" method="post">
+  <form action="/settings/disable-otp" method="POST">
     <button type="submit">Tắt OTP</button>
   </form>
 <% } %>

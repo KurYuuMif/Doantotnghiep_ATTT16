@@ -217,7 +217,7 @@ app.post("/settings/verify-otp", requireLogin, async (req, res) => {
     user.otpEnabled = true;
     user.pendingOtp = null;
     await db.write();
-    return res.send("Xác minh thành công. OTP đã bật!");
+    return res.render("verify-success");
   }
 
   res.send("Mã OTP không chính xác.");

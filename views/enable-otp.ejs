@@ -1,0 +1,9 @@
+<h1>Bật Google Authenticator</h1>
+<p>Quét mã QR bên dưới bằng ứng dụng Google Authenticator:</p>
+<img src="<%= qrCode %>" alt="QR Code">
+<p>Hoặc nhập mã bí mật này vào ứng dụng: <strong><%= secret %></strong></p>
+<form action="/settings/verify-otp" method="POST">
+  <label for="otp">Nhập mã OTP từ Google Authenticator:</label>
+  <input type="text" id="otp" name="otp" required>
+  <button type="submit">Xác minh</button>
+</form>

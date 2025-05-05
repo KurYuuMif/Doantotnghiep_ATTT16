@@ -1,0 +1,8 @@
+<h1>Nhập mã OTP</h1>
+<p>Vui lòng nhập mã OTP từ ứng dụng Google Authenticator:</p>
+<form action="/login" method="POST">
+  <input type="hidden" name="username" value="<%= username %>">
+  <label for="token">Mã OTP:</label>
+  <input type="text" id="token" name="token" required>
+  <button type="submit">Xác minh</button>
+</form>

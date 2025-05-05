@@ -112,23 +112,26 @@ app.get("/login", (req, res) => res.render("login"));
 app.post("/login", async (req, res) => {
   const { username, password, token } = req.body;
   const user = db.data.users.find(u => u.username === username);
-  
+
   if (!user || !(await bcrypt.compare(password, user.password))) {
     return res.send("Sai tên đăng nhập hoặc mật khẩu");
   }
 
   if (user.otpEnabled) {
     if (!token) {
-      return res.render("otp-email", { username }); // tạo file này
+      return res.render("otp-login", { username }); // Tạo file otp-login.ejs
     }
-  
-    if (token !== user.pendingOtp) {
+
+    const isVerified = speakeasy.totp.verify({
+      secret: user.otpSecret,
+      encoding: "base32",
+      token
+    });
+
+    if (!isVerified) {
       return res.send("Mã OTP không đúng.");
     }
-  
-    user.pendingOtp = null; // xóa OTP sau khi xác thực
-    await db.write();
-  }  
+  }
 
   req.session.userId = user.id;
   res.redirect("/dashboard");
@@ -183,19 +186,27 @@ app.post("/settings/enable-otp", requireLogin, async (req, res) => {
     return res.send("Bạn cần thêm email trước khi bật OTP.");
   }
 
-  const result = await sendOtpToUser(user, "Mã xác minh OTP", "Mã OTP của bạn là:");
-  if (result.success) {
-    res.render("verify-otp-code");
-  } else {
-    res.status(500).send("Không thể gửi OTP. Vui lòng thử lại.");
-  }
-});
+  // Tạo mã bí mật (secret) cho Google Authenticator
+  const secret = speakeasy.generateSecret({ name: `FileShare (${user.username})` });
+  user.otpSecret = secret.base32; // Lưu secret vào cơ sở dữ liệu
+  await db.write();
 
+  // Tạo mã QR để quét bằng Google Authenticator
+  QRCode.toDataURL(secret.otpauth_url, (err, dataUrl) => {
+    if (err) {
+      console.error("Lỗi tạo mã QR:", err);
+      return res.status(500).send("Không thể tạo mã QR.");
+    }
+
+    // Hiển thị mã QR để người dùng quét
+    res.render("enable-otp", { qrCode: dataUrl, secret: secret.base32 });
+  });
+});
 
 app.post("/settings/disable-otp", requireLogin, async (req, res) => {
   const user = db.data.users.find(u => u.id === req.session.userId);
   user.otpEnabled = false;
-  user.otpSecret = null;
+  user.otpSecret = null; // Xóa secret
   await db.write();
   res.redirect("/settings");
 });
@@ -223,20 +234,20 @@ app.post("/settings/verify-otp", requireLogin, async (req, res) => {
   const { otp } = req.body;
   const user = db.data.users.find(u => u.id === req.session.userId);
 
-  if (user.pendingOtp === otp) {
-    user.otpEnabled = true;
-    user.pendingOtp = null;
+  // Kiểm tra mã OTP với secret đã lưu
+  const isVerified = speakeasy.totp.verify({
+    secret: user.otpSecret,
+    encoding: "base32",
+    token: otp
+  });
+
+  if (isVerified) {
+    user.otpEnabled = true; // Bật OTP
     await db.write();
     return res.render("verify-success");
   }
 
-  // OTP sai → gửi lại OTP mới
-  const result = await sendOtpToUser(user, "Mã OTP mới do xác minh sai", "Bạn đã nhập sai mã OTP.");
-  if (result.success) {
-    return res.send("❌ Mã OTP sai. Mã mới đã được gửi đến email.");
-  } else {
-    return res.status(500).send("Không thể gửi OTP mới. Vui lòng thử lại.");
-  }
+  res.send("❌ Mã OTP không đúng. Vui lòng thử lại.");
 });
 
 app.post("/settings/resend-otp", requireLogin, async (req, res) => {

@@ -1,4 +1,21 @@
 {
-  "users": [],
+  "users": [
+    {
+      "id": "lAioXJjeaTXRFBY4WMrJK",
+      "username": "mk",
+      "password": "$2b$10$D.TzdGBcEDzpVmIQdVfMEORY8hHVjPtMvn4Hke0hAEsuuSEIcbS3O",
+      "email": "tintinkhoa2003@gmail.com",
+      "otpEnabled": true,
+      "otpSecret": "HBXUI3DTLYTCKVLTIQXC66STHFDUAS2ENRMHI42CHE4FAP32NZ2Q"
+    },
+    {
+      "id": "eUW2kpleDGgk8O4atvlaj",
+      "username": "mk",
+      "password": "$2b$10$TkBkWk33UnuE.VsW5mU7.eBR9fPWfKJzV0T2JO0Pz8a.qNT6JEfim",
+      "email": null,
+      "otpEnabled": false,
+      "otpSecret": null
+    }
+  ],
   "files": []
 }

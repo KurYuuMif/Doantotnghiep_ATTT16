@@ -1,19 +1,102 @@
-<h2>Cài đặt tài khoản</h2>
-<nav>
-    <a href="/">Trang chủ</a>
-  </nav>
-<form action="/settings/email" method="post">
-  <label>Email:</label>
-  <input name="email" type="email" value="<%= user.email || '' %>">
-  <button type="submit">Lưu email</button>
-</form>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cài đặt tài khoản</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f0f0f0;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      text-align: center;
+    }
+    .container {
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+      padding: 40px;
+      width: 90%;
+      max-width: 600px;
+    }
+    h2 {
+      font-size: 2.5rem;
+      color: #4CAF50;
+      margin-bottom: 20px;
+    }
+    form {
+      margin: 20px 0;
+    }
+    input {
+      padding: 10px;
+      margin: 10px 0;
+      width: 100%;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    a {
+      text-decoration: none;
+      font-size: 1.1rem;
+      color: #007BFF;
+      transition: color 0.3s;
+    }
+    a:hover {
+      color: #0056b3;
+    }
+    .back-link {
+      display: block;
+      margin-top: 20px;
+    }
+    .error-message {
+      color: red;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2><i class="fas fa-cog"></i> Cài đặt tài khoản</h2>
 
-<% if (!user.otpEnabled) { %>
-  <form action="/settings/enable-otp" method="POST">
-    <button type="submit">Bật OTP</button>
-  </form>
-<% } else { %>
-  <form action="/settings/disable-otp" method="POST">
-    <button type="submit">Tắt OTP</button>
-  </form>
-<% } %>
+    <% if (typeof error !== 'undefined') { %>
+      <div class="error-message"><%= error %></div>
+    <% } %>
+
+    <form action="/settings/email" method="POST">
+      <label for="email">Email:</label>
+      <input id="email" name="email" type="email" value="<%= user.email || '' %>">
+      <button type="submit"><i class="fas fa-save"></i> Lưu email</button>
+    </form>
+
+    <% if (!user.otpEnabled) { %>
+      <form action="/settings/enable-otp" method="POST">
+        <button type="submit"><i class="fas fa-lock"></i> Bật OTP</button>
+      </form>
+    <% } else { %>
+      <form action="/settings/disable-otp" method="POST">
+        <button type="submit"><i class="fas fa-unlock-alt"></i> Tắt OTP</button>
+      </form>
+    <% } %>
+
+    <a class="back-link" href="/"><i class="fas fa-arrow-left"></i> Quay lại trang chủ</a>
+  </div>
+</body>
+</html>

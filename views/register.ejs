@@ -1,9 +1,100 @@
-<h2>Đăng ký</h2>
-<nav>
-  <a href="/login">Đăng nhập</a>
-</nav>
-<form method="POST" action="/register">
-  <input name="username" placeholder="Tên đăng nhập" required />
-  <input name="password" type="password" placeholder="Mật khẩu" required />
-  <button>Đăng ký</button>
-</form>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Giữ lại style của trang login như trước */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+        }
+        h2 {
+            font-size: 3rem;
+            color: #4CAF50;
+            margin-bottom: 20px;
+        }
+        .container {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            width: 90%;
+            max-width: 600px;
+            text-align: center;
+        }
+        a {
+            text-decoration: none;
+            font-size: 1.2rem;
+            margin: 10px;
+            color: #007BFF;
+            transition: color 0.3s;
+        }
+        a:hover {
+            color: #0056b3;
+        }
+        .links {
+            margin-top: 20px;
+        }
+        .icon {
+            margin-right: 8px;
+        }
+        .error-message {
+            color: red;
+            margin-bottom: 15px;
+        }
+        input {
+            padding: 10px;
+            margin: 10px 0;
+            width: 100%;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        button {
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            width: 100%;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2><i class="fas fa-user-plus"></i> Đăng ký tài khoản</h2>
+
+        <!-- Kiểm tra lỗi từ server và hiển thị -->
+        <% if (typeof error !== 'undefined') { %>
+        <div class="error-message">
+            <%= error %>
+        </div>
+        <% } %>
+
+        <form action="/register" method="POST">
+            <input type="text" name="username" placeholder="Tên đăng nhập" required>
+            <input type="password" name="password" placeholder="Mật khẩu" required>
+            <input type="password" name="confirmPassword" placeholder="Xác nhận mật khẩu" required>
+            <button type="submit">Đăng ký</button>
+        </form>
+
+        <div class="links">
+            <a href="/login"><i class="fas fa-sign-in-alt icon"></i>Đã có tài khoản? Đăng nhập ngay</a>
+            <a href="/index"><i class="fas fa-arrow-left icon"></i>Quay lại trang chủ</a>
+        </div>
+    </div>
+</body>
+</html>

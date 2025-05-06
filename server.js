@@ -85,8 +85,13 @@ function requireLogin(req, res, next) {
 }
 
 // Routes
+//trang khởi động mặc định
 app.get("/", (req, res) => {
   if (req.session.userId) return res.redirect("/dashboard");
+  res.render("dashboard");
+});
+
+app.get("/index", (req, res) => {
   res.render("index");
 });
 
@@ -114,7 +119,8 @@ app.post("/login", async (req, res) => {
   const user = db.data.users.find(u => u.username === username);
   
   if (!user || !(await bcrypt.compare(password, user.password))) {
-    return res.send("Sai tên đăng nhập hoặc mật khẩu");
+    return res.render('login', { error: 'Sai tên đăng nhập hoặc mật khẩu' });
+
   }
 
   if (user.otpEnabled) {

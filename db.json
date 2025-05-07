@@ -1,4 +1,14 @@
 {
-  "users": [],
+  "users": [
+    {
+      "id": "vKVVbDZj0B8IY_AZcWD8r",
+      "username": "Phát Nguyễn Đình",
+      "password": null,
+      "email": "ndphat01@gmail.com",
+      "googleId": "105353592798121987615",
+      "otpEnabled": false,
+      "otpSecret": null
+    }
+  ],
   "files": []
 }

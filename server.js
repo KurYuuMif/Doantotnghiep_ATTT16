@@ -14,6 +14,11 @@ import otpGenerator from "otp-generator";
 import speakeasy from "speakeasy"; 
 import QRCode from "qrcode";       
 
+import passport from "passport";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import dotenv from "dotenv";
+dotenv.config();
+
 // Thiết lập __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -33,11 +38,15 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static("public/uploads"));
 app.use(express.static("public"));
 
+
 app.use(session({
   secret: "drive-secret",
   resave: false,
   saveUninitialized: false
 }));
+
+app.use(passport.initialize());
+app.use(passport.session());
 
 const sendOtpToUser = async (user, subject, message) => {
   const otp = otpGenerator.generate(6, { digits: true, upperCaseAlphabets: false, specialChars: false });
@@ -251,6 +260,51 @@ app.post("/settings/resend-otp", requireLogin, async (req, res) => {
   }
 });
 
+
+// Google OAuth
+
+passport.use(new GoogleStrategy({
+  clientID: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  callbackURL: process.env.GOOGLE_CALLBACK_URL
+}, async (accessToken, refreshToken, profile, done) => {
+  await db.read();
+  let user = db.data.users.find(u => u.googleId === profile.id);
+  
+  if (!user) {
+    // Tạo tài khoản mới nếu chưa tồn tại
+    user = {
+      id: nanoid(),
+      username: profile.displayName,
+      password: null,
+      email: profile.emails?.[0]?.value || null,
+      googleId: profile.id,
+      otpEnabled: false,
+      otpSecret: null
+    };
+    db.data.users.push(user);
+    await db.write();
+  }
+
+  return done(null, user);
+}));
+
+passport.serializeUser((user, done) => done(null, user.id));
+passport.deserializeUser(async (id, done) => {
+  await db.read();
+  const user = db.data.users.find(u => u.id === id);
+  done(null, user);
+});
+
+app.get("/auth/google", passport.authenticate("google", { scope: ["profile", "email"] }));
+
+app.get("/auth/google/callback", 
+  passport.authenticate("google", { failureRedirect: "/login" }),
+  (req, res) => {
+    req.session.userId = req.user.id;
+    res.redirect("/dashboard");
+  }
+);
 
 // Start server
 const port = process.env.PORT || 3000;

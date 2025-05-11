@@ -87,21 +87,21 @@
 
     <form action="/settings/email" method="POST">
       <label for="email">Email:</label>
-      <input id="email" name="email" type="email" value="<%= user?.email || '' %>" required>
+      <input id="email" name="email" type="email" value="<%= user.email || '' %>">
       <button type="submit"><i class="fas fa-save"></i> Lưu email</button>
     </form>
 
-    <% if (user?.otpEnabled) { %>
-      <form action="/settings/disable-otp" method="POST">
-        <button type="submit"><i class="fas fa-unlock-alt"></i> Tắt OTP</button>
-      </form>
-    <% } else { %>
+    <% if (!user.otpEnabled) { %>
       <form action="/settings/enable-otp" method="POST">
         <button type="submit"><i class="fas fa-lock"></i> Bật OTP</button>
       </form>
+    <% } else { %>
+      <form action="/settings/disable-otp" method="POST">
+        <button type="submit"><i class="fas fa-unlock-alt"></i> Tắt OTP</button>
+      </form>
     <% } %>
 
-    <a class="back-link" href="/dashboard"><i class="fas fa-arrow-left"></i> Quay lại Dashboard</a>
+    <a class="back-link" href="/"><i class="fas fa-arrow-left"></i> Quay lại trang chủ</a>
   </div>
 </body>
 </html>

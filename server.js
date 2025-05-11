@@ -89,6 +89,10 @@ function requireLogin(req, res, next) {
 //trang khởi động mặc định
 app.get("/", (req, res) => {
   if (req.session.userId) return res.redirect("/dashboard");
+  res.render("dashboard");
+});
+
+app.get("/index", (req, res) => {
   res.render("index");
 });
 

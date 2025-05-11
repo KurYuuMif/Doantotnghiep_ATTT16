@@ -1,4 +1,21 @@
 {
-  "users": [],
+  "users": [
+    {
+      "id": "kgfM2iGkzjvwnNuEcdWH3",
+      "username": "ads",
+      "password": "$2b$10$BHgzefg.EqP6rI4jUmNSvuaaGq3uQTqo4xPOTWvLM36RKur1EO9Eu",
+      "email": null,
+      "otpEnabled": false,
+      "otpSecret": null
+    },
+    {
+      "id": "wqUhmxVISYpsNn6hXfK39",
+      "username": "ads",
+      "password": "$2b$10$DWXDMWTo/Wi.sX95ZIAPaerGqyriuaWlvwMg8RmFEa/1FAHPkL5OK",
+      "email": null,
+      "otpEnabled": false,
+      "otpSecret": null
+    }
+  ],
   "files": []
 }

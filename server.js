@@ -84,9 +84,15 @@ function requireLogin(req, res, next) {
   next();
 }
 
+
 // Routes
+//trang khởi động mặc định
 app.get("/", (req, res) => {
   if (req.session.userId) return res.redirect("/dashboard");
+  res.render("index");
+});
+
+app.get("/index", (req, res) => {
   res.render("index");
 });
 
@@ -114,7 +120,8 @@ app.post("/login", async (req, res) => {
   const user = db.data.users.find(u => u.username === username);
   
   if (!user || !(await bcrypt.compare(password, user.password))) {
-    return res.send("Sai tên đăng nhập hoặc mật khẩu");
+    return res.render('login', { error: 'Sai tên đăng nhập hoặc mật khẩu' });
+
   }
 
   if (user.otpEnabled) {
@@ -133,6 +140,8 @@ app.post("/login", async (req, res) => {
   req.session.userId = user.id;
   res.redirect("/dashboard");
 });
+
+
 
 app.get("/dashboard", requireLogin, (req, res) => {
   const userFiles = db.data.files.filter(f => f.owner === req.session.userId);
@@ -160,7 +169,7 @@ app.get("/download/:filename", requireLogin, (req, res) => {
 
 app.get("/logout", (req, res) => {
   req.session.destroy();
-  res.redirect("/");
+  res.redirect("/index");
 });
 
 app.get("/settings", requireLogin, (req, res) => {
